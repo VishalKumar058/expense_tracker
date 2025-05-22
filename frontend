@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Transaction Manager</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 30px;
+      background: #f4f6f8;
+      color: #333;
+    }
+    h2 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    .input-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    .input-row input, .input-row select {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+      width: 150px;
+    }
+    .input-row input:focus, .input-row select:focus {
+      border-color: #2980b9;
+      outline: none;
+      box-shadow: 0 0 5px rgba(41, 128, 185, 0.5);
+    }
+    button {
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 2px 5px rgba(41, 128, 185, 0.4);
+    }
+    button:hover {
+      background-color: #1c5980;
+    }
+    .transaction-list {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    .transaction-item {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 10px 15px;
+      border-bottom: 1px solid #eee;
+      font-size: 1em;
+    }
+    .transaction-item:last-child {
+      border-bottom: none;
+    }
+    .transaction-item span {
+      min-width: 100px;
+      color: #555;
+    }
+    .transaction-item button {
+      margin-left: 5px;
+      background-color: #e74c3c;
+      box-shadow: 0 2px 5px rgba(231, 76, 60, 0.4);
+    }
+    .transaction-item button:hover {
+      background-color: #c0392b;
+    }
+    .total-balance {
+      font-size: 1.4em;
+      font-weight: 700;
+      margin-top: 30px;
+      text-align: center;
+      color: #2c3e50;
+    }
+    .credit {
+      color: #27ae60;
+      font-weight: 600;
+    }
+    .debit {
+      color: #c0392b;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <h2>Transaction Manager</h2>
+  <div class="input-row">
+    <input type="number" id="amount" placeholder="Amount" />
+    <select id="type">
+      <option value="credit">Credit</option>
+      <option value="debit">Debit</option>
+    </select>
+    <input type="text" id="category" placeholder="Category" />
+    <input type="text" id="description" placeholder="Description" />
+    <button onclick="addTransaction()">Add Transaction</button>
+  </div>
+  <div class="transaction-list" id="transactionList"></div>
+  <div class="total-balance" id="totalBalance">Total Balance: $0.00</div>
+
+<script>
+let transactions = [];
+
+function renderTransactions() {
+  const list = document.getElementById('transactionList');
+  list.innerHTML = '';
+  transactions.forEach((t, i) => {
+    const item = document.createElement('div');
+    item.className = 'transaction-item';
+    item.innerHTML = `
+      <span class="${t.type}">$${t.amount.toFixed(2)}</span>
+      <span>${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</span>
+      <span>${t.category}</span>
+      <span>${t.description}</span>
+      <button onclick="editTransaction(${i})">Edit</button>
+      <button onclick="deleteTransaction(${i})">Delete</button>
+    `;
+    list.appendChild(item);
+  });
+  updateTotalBalance();
+}
+
+function addTransaction() {
+  const amount = parseFloat(document.getElementById('amount').value);
+  const type = document.getElementById('type').value;
+  const category = document.getElementById('category').value.trim();
+  const description = document.getElementById('description').value.trim();
+
+  if (isNaN(amount) || amount <= 0 || !category || !description) {
+    alert('Please enter valid amount, category, and description.');
+    return;
+  }
+
+  transactions.push({ amount, type, category, description });
+  clearInputs();
+  renderTransactions();
+}
+
+function clearInputs() {
+  document.getElementById('amount').value = '';
+  document.getElementById('category').value = '';
+  document.getElementById('description').value = '';
+  document.getElementById('type').value = 'credit';
+}
+
+function editTransaction(index) {
+  const t = transactions[index];
+  const amount = parseFloat(prompt('Edit amount:', t.amount));
+  const type = prompt('Edit type (credit/debit):', t.type);
+  const category = prompt('Edit category:', t.category);
+  const description = prompt('Edit description:', t.description);
+
+  if (
+    isNaN(amount) || amount <= 0 ||
+    (type !== 'credit' && type !== 'debit') ||
+    !category || !description
+  ) {
+    alert('Invalid input. Edit cancelled.');
+    return;
+  }
+
+  transactions[index] = { amount, type, category, description };
+  renderTransactions();
+}
+
+function deleteTransaction(index) {
+  transactions.splice(index, 1);
+  renderTransactions();
+}
+
+function updateTotalBalance() {
+  let credit = 0, debit = 0;
+  transactions.forEach(t => {
+    if (t.type === 'credit') credit += t.amount;
+    else if (t.type === 'debit') debit += t.amount;
+  });
+  const total = credit - debit;
+  document.getElementById('totalBalance').innerHTML =
+    `Total Balance: $${total.toFixed(2)} <span class="credit">(Credit: $${credit.toFixed(2)})</span> <span class="debit">(Debit: $${debit.toFixed(2)})</span>`;
+}
+
+renderTransactions();
+</script>
+</body>
+</html>
